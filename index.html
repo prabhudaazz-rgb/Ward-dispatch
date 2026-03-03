@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibrant Gradient Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            width: 320px;
+            padding: 24px;
+        }
+
+        .screen {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: right;
+            margin-bottom: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            height: 60px;
+            border-radius: 18px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Orange to Pink Gradients */
+        .btn-gradient {
+            background: linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
+        }
+
+        .btn-operator {
+            background: linear-gradient(135deg, #FF0844 0%, #FFB199 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 8, 68, 0.3);
+        }
+
+        .btn-utility {
+            background: rgba(255, 255, 255, 0.5);
+            color: #333;
+        }
+
+        #message-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="message-toast"></div>
+
+    <div class="glass-container">
+        <!-- Screen -->
+        <div class="screen">
+            <div id="history" class="text-black/40 text-xs mb-1 h-4 overflow-hidden"></div>
+            <div id="display" class="text-3xl font-bold text-gray-800 truncate">0</div>
+        </div>
+
+        <!-- Keypad -->
+        <div class="grid grid-cols-4 gap-3">
+            <div onclick="clearAll()" class="btn btn-utility text-sm">AC</div>
+            <div onclick="deleteChar()" class="btn btn-utility text-sm">DEL</div>
+            <div onclick="append('%')" class="btn btn-utility">%</div>
+            <div onclick="append('/')" class="btn btn-operator">÷</div>
+
+            <div onclick="append('7')" class="btn btn-gradient">7</div>
+            <div onclick="append('8')" class="btn btn-gradient">8</div>
+            <div onclick="append('9')" class="btn btn-gradient">9</div>
+            <div onclick="append('*')" class="btn btn-operator">×</div>
+
+            <div onclick="append('4')" class="btn btn-gradient">4</div>
+            <div onclick="append('5')" class="btn btn-gradient">5</div>
+            <div onclick="append('6')" class="btn btn-gradient">6</div>
+            <div onclick="append('-')" class="btn btn-operator">−</div>
+
+            <div onclick="append('1')" class="btn btn-gradient">1</div>
+            <div onclick="append('2')" class="btn btn-gradient">2</div>
+            <div onclick="append('3')" class="btn btn-gradient">3</div>
+            <div onclick="append('+')" class="btn btn-operator">+</div>
+
+            <div onclick="append('0')" class="btn btn-gradient col-span-2">0</div>
+            <div onclick="append('.')" class="btn btn-gradient">.</div>
+            <div onclick="calculate()" class="btn btn-operator">=</div>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const history = document.getElementById('history');
+        const toast = document.getElementById('message-toast');
+        
+        let currentInput = '0';
+        let isEvaluated = false;
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function updateDisplay() {
+            display.innerText = currentInput;
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            history.innerText = '';
+            isEvaluated = false;
+            updateDisplay();
+        }
+
+        function deleteChar() {
+            if (isEvaluated) {
+                clearAll();
+                return;
+            }
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function append(char) {
+            if (isEvaluated && !['+', '-', '*', '/', '%'].includes(char)) {
+                currentInput = char;
+                isEvaluated = false;
+            } else if (isEvaluated && ['+', '-', '*', '/', '%'].includes(char)) {
+                isEvaluated = false;
+                currentInput += char;
+            } else {
+                if (currentInput === '0' && !['.', '+', '-', '*', '/', '%'].includes(char)) {
+                    currentInput = char;
+                } else {
+                    // Prevent double operators
+                    const lastChar = currentInput.slice(-1);
+                    if (['+', '-', '*', '/', '%', '.'].includes(lastChar) && ['+', '-', '*', '/', '%', '.'].includes(char)) {
+                        return;
+                    }
+                    currentInput += char;
+                }
+            }
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                // Sanitize input: replace visual operators with JS operators
+                let expression = currentInput.replace(/×/g, '*').replace(/÷/g, '/');
+                
+                // Use a safer evaluation method than pure eval if possible, 
+                // but for a simple calculator eval with string cleanup is common
+                let result = eval(expression);
+                
+                if (!isFinite(result)) {
+                    showToast("Error: Division by zero");
+                    clearAll();
+                    return;
+                }
+
+                history.innerText = currentInput + ' =';
+                currentInput = Number(result.toFixed(8)).toString(); // Limit decimals
+                isEvaluated = true;
+                updateDisplay();
+            } catch (e) {
+                showToast("Invalid expression");
+                clearAll();
+            }
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (/[0-9]/.test(key)) append(key);
+            if (['+', '-', '*', '/', '%', '.'].includes(key)) append(key);
+            if (key === 'Enter' || key === '=') calculate();
+            if (key === 'Backspace') deleteChar();
+            if (key === 'Escape') clearAll();
+        });
+    </script>
+</body>
+</html>
